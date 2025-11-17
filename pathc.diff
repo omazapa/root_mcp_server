@@ -1,0 +1,199 @@
+diff --git a/root_mcp_server/executor.py b/root_mcp_server/executor.py
+index b7d65db..35a6d06 100644
+--- a/root_mcp_server/executor.py
++++ b/root_mcp_server/executor.py
+@@ -6,6 +6,7 @@ import os
+ import tempfile
+ import contextlib
+ import traceback
++import threading
+ from typing import Any, Dict, Optional
+ from dataclasses import asdict, dataclass
+ 
+@@ -30,12 +31,58 @@ class ExecutionResult:
+ class RootExecutor:
+     """Executes Python and C++ code using PyROOT in-process."""
+ 
+-    def __init__(self):
++    def __init__(self, enable_graphics=False):
+         if ROOT is None:
+             raise RuntimeError("PyROOT not available. Install ROOT")
+-        # Set batch mode to avoid GUI windows
+-        ROOT.gROOT.SetBatch(True)
+-
++        
++        self.enable_graphics = enable_graphics
++        
++        # Keep references to ROOT objects to prevent garbage collection
++        self._root_objects = []
++        
++        # Initialize TApplication for ROOT event loop (graphics, event processing)
++        if not ROOT.gApplication:
++            ROOT.TApplication("root_mcp", None, None)
++        
++        # Set batch mode unless graphics enabled
++        ROOT.gROOT.SetBatch(not enable_graphics)
++        
++        # Enable ImplicitMT for better performance
++        try:
++            ROOT.EnableImplicitMT()
++        except Exception:
++            pass  # May already be enabled or not available
++        
++        # Start ROOT event loop in background thread
++        self._event_loop_thread = None
++        if enable_graphics:
++            self._start_event_loop_thread()
++    
++    def _start_event_loop_thread(self) -> None:
++        """Start ROOT event loop in a background daemon thread."""
++        def run_event_loop():
++            try:
++                import ROOT
++                import time
++                # Keep processing events in a loop without blocking
++                while True:
++                    ROOT.gSystem.ProcessEvents()
++                    time.sleep(0.1)  # 100ms sleep to prevent CPU spinning
++            except Exception:
++                pass
++        
++        self._event_loop_thread = threading.Thread(target=run_event_loop, daemon=True)
++        self._event_loop_thread.start()
++    
++    def process_root_events(self) -> None:
++        """Process ROOT events non-blocking (for graphics updates)."""
++        try:
++            import ROOT
++            if ROOT.gApplication:
++                ROOT.gSystem.ProcessEvents()
++        except Exception:
++            pass
++    
+     def run_python(self, code: str) -> Dict[str, Any]:
+         """Execute Python code with ROOT available in scope."""
+         out_buf, err_buf = io.StringIO(), io.StringIO()
+@@ -43,6 +90,18 @@ class RootExecutor:
+             with contextlib.redirect_stdout(out_buf), contextlib.redirect_stderr(err_buf):
+                 globals_dict = {"ROOT": ROOT, "__name__": "__root_mcp__"}
+                 exec(code, globals_dict)
++                
++                # Keep references to ROOT graphics objects to prevent garbage collection
++                if self.enable_graphics:
++                    for name, obj in globals_dict.items():
++                        if name.startswith("__"):
++                            continue
++                        # Keep TCanvas, TH1, TGraph, etc. objects alive
++                        if hasattr(obj, "__class__") and hasattr(obj.__class__, "__name__"):
++                            class_name = obj.__class__.__name__
++                            if class_name.startswith("T") and any(x in class_name for x in ["Canvas", "H1", "H2", "H3", "Graph", "Pad"]):
++                                self._root_objects.append(obj)
++            
+             result = ExecutionResult(
+                 ok=True,
+                 stdout=out_buf.getvalue(),
+diff --git a/root_mcp_server/server.py b/root_mcp_server/server.py
+index 756bddb..a07028c 100644
+--- a/root_mcp_server/server.py
++++ b/root_mcp_server/server.py
+@@ -12,8 +12,8 @@ from mcp.server import FastMCP
+ from root_mcp_server.executor import RootExecutor
+ 
+ 
+-# Initialize executor (will fail if PyROOT not available)
+-executor = RootExecutor()
++# Initialize executor with graphics enabled (will fail if PyROOT not available)
++executor = RootExecutor(enable_graphics=True)
+ 
+ # Create FastMCP server
+ server = FastMCP(name="root-mcp")
+diff --git a/test_mcp_client.py b/test_mcp_client.py
+index 8f5d65e..3fa7505 100644
+--- a/test_mcp_client.py
++++ b/test_mcp_client.py
+@@ -13,46 +13,62 @@ except ImportError:
+     sys.exit(1)
+ 
+ 
+-async def test_root_mcp():
+-    """Launch the MCP server and call run_python and run_cpp tools."""
+-    # Path to thisroot.sh (adjust if needed)
+-    thisroot = "/home/ozapatam/Projects/CERN/ROOT/root/build/bin/thisroot.sh"
+-    
+-    # Server command: source ROOT env then run the CLI
+-    server_cmd = f"bash -c 'source {thisroot} && exec /usr/bin/python3 -m root_mcp_server.cli'"
+-    
++async def main():
++    """Test the ROOT MCP server."""
++    # Launch the server as a subprocess
+     server_params = StdioServerParameters(
+         command="bash",
+-        args=["-c", f"source {thisroot} && exec /usr/bin/python3 -m root_mcp_server.cli"],
+-        env=os.environ.copy()
++        args=[
++            "-lc",
++            "source /home/ozapatam/Projects/CERN/ROOT/root/build/bin/thisroot.sh && /usr/bin/python3 -m root_mcp_server.cli"
++        ],
++        env=None
+     )
+     
+     print("Launching root-mcp server...")
++    
+     async with stdio_client(server_params) as (read, write):
+         async with ClientSession(read, write) as session:
++            # Initialize the session
+             print("Connected to server. Initializing...")
+             await session.initialize()
+             
+             # List available tools
+             print("\n=== Available tools ===")
+-            tools_response = await session.list_tools()
+-            for tool in tools_response.tools:
++            tools_result = await session.list_tools()
++            for tool in tools_result.tools:
+                 print(f"  - {tool.name}: {tool.description}")
+             
+-            # Call run_python
+-            print("\n=== Calling run_python ===")
+-            python_code = "import ROOT; print(ROOT.gROOT.GetVersion())"
+-            result = await session.call_tool("run_python", arguments={"code": python_code})
++            # Test 1: Create and draw a histogram
++            print("\n=== Creating histogram ===")
++            histogram_code = """
++import ROOT
++
++# Create a histogram
++h = ROOT.TH1F("h", "Gaussian Distribution", 100, -5, 5)
++
++# Fill with random gaussian
++for _ in range(10000):
++    h.Fill(ROOT.gRandom.Gaus(0, 1))
++
++# Create canvas and draw
++c = ROOT.TCanvas("c", "Test Canvas", 800, 600)
++h.Draw()
++c.Update()
++
++# Save to file
++c.SaveAs("/tmp/test_histogram.png")
++print("Histogram saved to /tmp/test_histogram.png")
++"""
++            result = await session.call_tool("run_python", arguments={"code": histogram_code})
+             print(f"Result: {result}")
+             
+-            # Call run_cpp
+-            print("\n=== Calling run_cpp ===")
+-            cpp_code = 'std::cout << "Hello from C++!" << std::endl;'
+-            result2 = await session.call_tool("run_cpp", arguments={"code": cpp_code})
+-            print(f"Result: {result2}")
++            # Give time to see the window
++            print("\n=== Waiting 3 seconds... ===")
++            await asyncio.sleep(3)
+             
+-    print("\nTest completed successfully!")
++            print("\nHistogram test completed!")
+ 
+ 
+ if __name__ == "__main__":
+-    asyncio.run(test_root_mcp())
++    asyncio.run(main())

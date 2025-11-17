@@ -19,11 +19,6 @@ pip install -e '.[cli]'
 pip install -e .
 ```
 
-Note: This package assumes PyROOT is available. If using the Snap version of ROOT:
-
-```bash
-/snap/bin/root-framework.pyroot -m pip install -e '.[cli]'
-```
 
 ## Usage
 
@@ -33,17 +28,12 @@ Note: This package assumes PyROOT is available. If using the Snap version of ROO
 root-mcp
 ```
 
-Or with the snap interpreter:
-
-```bash
-/snap/bin/root-framework.pyroot -m root_mcp_server.cli
-```
 
 ### Tools available
 
 The server exposes two tools:
 
-1. **`run_python`**: Execute Python code with `ROOT` in scope
-2. **`run_cpp`**: Execute C++ code via `ROOT.gInterpreter`
+1. **`root_python`**: Execute Python code with `ROOT` in scope
+2. **`root_cpp`**: Execute C++ code via `ROOT.gInterpreter`
 
 Both return `{ok: bool, stdout: str, stderr: str, error: str|null}`.

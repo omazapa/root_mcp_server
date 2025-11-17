@@ -30,11 +30,24 @@ class ExecutionResult:
 class RootExecutor:
     """Executes Python and C++ code using PyROOT in-process."""
 
-    def __init__(self):
+    def __init__(self, enable_graphics=False):
         if ROOT is None:
             raise RuntimeError("PyROOT not available. Install ROOT")
-        # Set batch mode to avoid GUI windows
-        ROOT.gROOT.SetBatch(True)
+        
+        # Initialize TApplication to enable ROOT event loop
+        # This is needed for certain ROOT operations even in batch mode
+        if not ROOT.gApplication:
+            ROOT.TApplication("root_mcp", None, None)
+        
+        # Set batch mode unless graphics explicitly enabled
+        ROOT.gROOT.SetBatch(not enable_graphics)
+        
+        # Enable implicit multi-threading if available (for better performance)
+        try:
+            if hasattr(ROOT, 'EnableImplicitMT'):
+                ROOT.EnableImplicitMT()
+        except Exception:
+            pass  # Not all ROOT builds have MT support
 
     def run_python(self, code: str) -> Dict[str, Any]:
         """Execute Python code with ROOT available in scope."""
@@ -77,12 +90,15 @@ class RootExecutor:
             os.dup2(tmp_err_fd, 2)
 
             with contextlib.redirect_stdout(py_out), contextlib.redirect_stderr(py_err):
+                # ProcessLine returns 0 on success, non-zero on error
+                ret_code = None
                 try:
                     # Try Declare first (for multi-line declarations)
                     ROOT.gInterpreter.Declare(code)
+                    ret_code = 0  # Declare doesn't return a value, assume success if no exception
                 except Exception:
-                    # Fall back to ProcessLine
-                    ROOT.gInterpreter.ProcessLine(code)
+                    # Fall back to ProcessLine which returns error code
+                    ret_code = ROOT.gInterpreter.ProcessLine(code)
 
             # Attempt to flush Python-level buffers
             try:
@@ -111,11 +127,28 @@ class RootExecutor:
             with open(tmp_err_path, "r", encoding="utf-8", errors="replace") as f:
                 os_err = f.read()
 
-            result = ExecutionResult(
-                ok=True,
-                stdout=(py_out.getvalue() or "") + (os_out or ""),
-                stderr=(py_err.getvalue() or "") + (os_err or ""),
-            )
+            # Combine outputs
+            combined_stdout = (py_out.getvalue() or "") + (os_out or "")
+            combined_stderr = (py_err.getvalue() or "") + (os_err or "")
+
+            # Check for errors: ret_code != 0 OR stderr contains error keywords
+            error_keywords = ["error:", "Error:", "fatal error:"]
+            has_stderr_error = any(keyword in combined_stderr for keyword in error_keywords)
+            
+            if ret_code != 0 or has_stderr_error:
+                result = ExecutionResult(
+                    ok=False,
+                    stdout=combined_stdout,
+                    stderr=combined_stderr,
+                    error=f"C++ execution failed (return code: {ret_code})" if ret_code != 0 else "C++ compilation error detected",
+                    error_type="ClingError",
+                )
+            else:
+                result = ExecutionResult(
+                    ok=True,
+                    stdout=combined_stdout,
+                    stderr=combined_stderr,
+                )
         except Exception as e:
             # Ensure fds are restored on error
             try:
