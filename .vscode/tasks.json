@@ -1,0 +1,37 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start root-mcp (stdio)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+  "-lc",
+  "source /home/ozapatam/Projects/CERN/ROOT/root/build/bin/thisroot.sh && exec /usr/bin/python3 -m root_mcp_server.cli"
+      ],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "isBackground": false
+    },
+    {
+      "label": "Start root-mcp (debug wrapper)",
+      "type": "shell",
+  "command": "${workspaceFolder}/scripts/launch_root_mcp_debug.sh",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "isBackground": false
+    }
+  ]
+}

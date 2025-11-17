@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Attach to root-mcp (debugpy)",
+      "type": "python",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "justMyCode": false
+    },
+    {
+      "name": "Run root-mcp (module) [no pre-source]",
+      "type": "python",
+      "request": "launch",
+      "module": "root_mcp_server.cli",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    }
+  ]
+}

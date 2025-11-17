@@ -1,0 +1,9 @@
+# Runtime and development dependencies# Runtime dependencies for the MCP project.
+
+# Note: PyROOT comes from the snap package /snap/bin/root-framework.pyroot# Note: PyROOT (ROOT Python bindings) is provided by the snap package
+
+# `/snap/bin/root-framework.pyroot` and therefore is not listed here.
+
+mcp[cli]>=1.0# This project does not depend on Flask; only provide the CLI helper here.
+
+click>=8.0
