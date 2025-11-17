@@ -1,4 +1,6 @@
 """Core MCP server for ROOT execution (Python and C++ via PyROOT)."""
+# pylint: disable=no-member,broad-except
+# ROOT module has dynamic attributes that pylint cannot detect
 
 import io
 import sys
@@ -10,7 +12,7 @@ from typing import Any, Dict, Optional
 from dataclasses import asdict, dataclass
 
 try:
-    import ROOT
+    import ROOT  # type: ignore
 except ImportError:
     ROOT = None  # type: ignore
 
@@ -55,13 +57,13 @@ class RootExecutor:
         try:
             with contextlib.redirect_stdout(out_buf), contextlib.redirect_stderr(err_buf):
                 globals_dict = {"ROOT": ROOT, "__name__": "__root_mcp__"}
-                exec(code, globals_dict)
+                exec(code, globals_dict)  # pylint: disable=exec-used
             result = ExecutionResult(
                 ok=True,
                 stdout=out_buf.getvalue(),
                 stderr=err_buf.getvalue(),
             )
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             with contextlib.redirect_stdout(out_buf), contextlib.redirect_stderr(err_buf):
                 traceback.print_exc()
             result = ExecutionResult(

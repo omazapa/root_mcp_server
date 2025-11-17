@@ -9,7 +9,6 @@ Both tools execute code in-process using PyROOT (via RootExecutor).
 
 import asyncio
 import sys
-import json
 from mcp.server import FastMCP
 from root_mcp_server.executor import RootExecutor
 

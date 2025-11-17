@@ -18,9 +18,6 @@ async def test_root_mcp():
     # Path to thisroot.sh (adjust if needed)
     thisroot = "/home/ozapatam/Projects/CERN/ROOT/root/build/bin/thisroot.sh"
     
-    # Server command: source ROOT env then run the CLI
-    server_cmd = f"bash -c 'source {thisroot} && exec /usr/bin/python3 -m root_mcp_server.cli'"
-    
     server_params = StdioServerParameters(
         command="bash",
         args=["-c", f"source {thisroot} && exec /usr/bin/python3 -m root_mcp_server.cli"],
