@@ -38,16 +38,16 @@ class RootExecutor:
         
         # Initialize TApplication to enable ROOT event loop
         # This is needed for certain ROOT operations even in batch mode
-        if not ROOT.gApplication:
-            ROOT.TApplication("root_mcp", None, None)
+        if not ROOT.gApplication:  # type: ignore
+            ROOT.TApplication("root_mcp", None, None)  # type: ignore
         
         # Set batch mode unless graphics explicitly enabled
-        ROOT.gROOT.SetBatch(not enable_graphics)
+        ROOT.gROOT.SetBatch(not enable_graphics)  # type: ignore
         
         # Enable implicit multi-threading if available (for better performance)
         try:
             if hasattr(ROOT, 'EnableImplicitMT'):
-                ROOT.EnableImplicitMT()
+                ROOT.EnableImplicitMT()  # type: ignore
         except Exception:
             pass  # Not all ROOT builds have MT support
 
@@ -96,11 +96,11 @@ class RootExecutor:
                 ret_code = None
                 try:
                     # Try Declare first (for multi-line declarations)
-                    ROOT.gInterpreter.Declare(code)
+                    ROOT.gInterpreter.Declare(code)  # type: ignore
                     ret_code = 0  # Declare doesn't return a value, assume success if no exception
                 except Exception:
                     # Fall back to ProcessLine which returns error code
-                    ret_code = ROOT.gInterpreter.ProcessLine(code)
+                    ret_code = ROOT.gInterpreter.ProcessLine(code)  # type: ignore
 
             # Attempt to flush Python-level buffers
             try:
