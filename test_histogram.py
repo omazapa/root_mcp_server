@@ -10,14 +10,14 @@ async def test_histogram():
         args=["-m", "root_mcp_server.cli"],
         env=None
     )
-    
+
     print("Launching root-mcp server with graphics enabled...")
-    
+
     async with stdio_client(server_params) as (read, write):
         async with read:
             async with write:
                 print("Connected. Creating histogram...")
-                
+
                 # Create and display histogram
                 histogram_code = """
 import ROOT
@@ -43,10 +43,10 @@ print("Histogram saved to /tmp/test_histogram.png")
 time.sleep(5)
 print("Done")
 """
-                
+
                 result = await write.call_tool("run_python", arguments={"code": histogram_code})
                 print(f"\nResult: {result}")
-                
+
                 print("\nHistogram test completed!")
 
 if __name__ == "__main__":

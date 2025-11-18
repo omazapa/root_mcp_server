@@ -21,13 +21,13 @@ async def main():
         ],
         env=None
     )
-    
+
     print("Starting ROOT MCP server with graphics enabled...")
-    
+
     async with stdio_client(server_params) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
-            
+
             # Create first histogram
             print("\n=== Creating first histogram (h1) ===")
             code1 = """
@@ -42,9 +42,9 @@ print(f"Created h1 (entries: {h1.GetEntries()}) and c1")
 """
             result1 = await session.call_tool("root_python", arguments={"code": code1})
             print(result1.content[0].text)
-            
+
             await asyncio.sleep(1)
-            
+
             # Create second histogram
             print("\n=== Creating second histogram (h2) ===")
             code2 = """
@@ -59,9 +59,9 @@ print(f"Created h2 (entries: {h2.GetEntries()}) and c2")
 """
             result2 = await session.call_tool("root_python", arguments={"code": code2})
             print(result2.content[0].text)
-            
+
             await asyncio.sleep(1)
-            
+
             # Check that objects are still accessible
             print("\n=== Checking objects are still alive ===")
             code3 = """
@@ -76,17 +76,17 @@ if c1:
     print(f"✓ Canvas c1 still exists")
 else:
     print(f"✗ Canvas c1 was garbage collected")
-    
+
 if c2:
     print(f"✓ Canvas c2 still exists")
 else:
     print(f"✗ Canvas c2 was garbage collected")
-    
+
 if h1:
     print(f"✓ Histogram h1 still exists (entries: {h1.GetEntries()})")
 else:
     print(f"✗ Histogram h1 was garbage collected")
-    
+
 if h2:
     print(f"✓ Histogram h2 still exists (entries: {h2.GetEntries()})")
 else:
@@ -94,10 +94,10 @@ else:
 """
             result3 = await session.call_tool("root_python", arguments={"code": code3})
             print(result3.content[0].text)
-            
+
             print("\n=== Keeping session alive for 5 more seconds ===")
             await asyncio.sleep(5)
-            
+
     print("\nSession ended. All objects should have been kept alive during the session!")
 
 

@@ -35,15 +35,15 @@ class RootExecutor:
     def __init__(self, enable_graphics=False):
         if ROOT is None:
             raise RuntimeError("PyROOT not available. Install ROOT")
-        
+
         # Initialize TApplication to enable ROOT event loop
         # This is needed for certain ROOT operations even in batch mode
         if not ROOT.gApplication:  # type: ignore
             ROOT.TApplication("root_mcp", None, None)  # type: ignore
-        
+
         # Set batch mode unless graphics explicitly enabled
         ROOT.gROOT.SetBatch(not enable_graphics)  # type: ignore
-        
+
         # Enable implicit multi-threading if available (for better performance)
         try:
             if hasattr(ROOT, 'EnableImplicitMT'):
@@ -136,13 +136,18 @@ class RootExecutor:
             # Check for errors: ret_code != 0 OR stderr contains error keywords
             error_keywords = ["error:", "Error:", "fatal error:"]
             has_stderr_error = any(keyword in combined_stderr for keyword in error_keywords)
-            
+
             if ret_code != 0 or has_stderr_error:
+                error_msg = (
+                    f"C++ execution failed (return code: {ret_code})"
+                    if ret_code != 0
+                    else "C++ compilation error detected"
+                )
                 result = ExecutionResult(
                     ok=False,
                     stdout=combined_stdout,
                     stderr=combined_stderr,
-                    error=f"C++ execution failed (return code: {ret_code})" if ret_code != 0 else "C++ compilation error detected",
+                    error=error_msg,
                     error_type="ClingError",
                 )
             else:
