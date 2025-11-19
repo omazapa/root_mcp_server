@@ -17,9 +17,9 @@ async def main():
         command="bash",
         args=[
             "-lc",
-            "source /home/ozapatam/Projects/CERN/ROOT/root/build/bin/thisroot.sh && /usr/bin/python3 -m root_mcp_server.cli"
+            "/usr/bin/python3 -m root_mcp_server.cli",
         ],
-        env=None
+        env=None,
     )
 
     print("Starting ROOT MCP server with graphics enabled...")

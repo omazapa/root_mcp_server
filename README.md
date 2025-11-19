@@ -27,7 +27,7 @@ Minimal MCP (Model Context Protocol) server that allows LLMs and other MCP clien
 
 ## Architecture
 
-Below is the architecture diagram for the `root_mcp_server` project. The image file `diagram.png` (in the repository root) contains a visual representation of the components and their interactions.
+Below is the architecture diagram for the `root_mcp_server` project. The image contains a visual representation of the components and their interactions.
 
 ![Architecture Diagram](./diagram.png)
 
@@ -76,14 +76,11 @@ Add the MCP server configuration to your VS Code settings. Open your `settings.j
     }
   ],
   "mcp.servers": {
-    "root-mcp": {
-      "command": "bash",
-      "args": [
-        "-lc",
-        "source /path/to/ROOT/build/bin/thisroot.sh && python3 -m root_mcp_server.cli"
-      ],
-      "env": {}
-    }
+		"root/mcp-server": {
+			"type": "stdio",
+			"command": "root-mcp",
+			"args": []
+		}
   }
 }
 ```

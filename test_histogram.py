@@ -3,13 +3,10 @@
 import asyncio
 from mcp.client.stdio import stdio_client, StdioServerParameters
 
+
 async def test_histogram():
     """Test histogram plotting with ROOT MCP server."""
-    server_params = StdioServerParameters(
-        command="/usr/bin/python3",
-        args=["-m", "root_mcp_server.cli"],
-        env=None
-    )
+    server_params = StdioServerParameters(command="/usr/bin/python3", args=["-m", "root_mcp_server.cli"], env=None)
 
     print("Launching root-mcp server with graphics enabled...")
 
@@ -44,10 +41,11 @@ time.sleep(5)
 print("Done")
 """
 
-                result = await write.call_tool("run_python", arguments={"code": histogram_code})
+                result = await write.call_tool("root_python", arguments={"code": histogram_code})
                 print(f"\nResult: {result}")
 
                 print("\nHistogram test completed!")
+
 
 if __name__ == "__main__":
     asyncio.run(test_histogram())

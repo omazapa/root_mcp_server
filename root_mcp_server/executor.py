@@ -1,11 +1,11 @@
 """Core MCP server for ROOT execution (Python and C++ via PyROOT)."""
+
 # pylint: disable=no-member,broad-except
 # ROOT module has dynamic attributes that pylint cannot detect
 
 import io
 import sys
 import os
-import re
 import tempfile
 import contextlib
 import traceback
@@ -47,78 +47,33 @@ class RootExecutor:
 
         # Enable implicit multi-threading if available (for better performance)
         try:
-            if hasattr(ROOT, 'EnableImplicitMT'):
+            if hasattr(ROOT, "EnableImplicitMT"):
                 ROOT.EnableImplicitMT()  # type: ignore
         except Exception:
             pass  # Not all ROOT builds have MT support
 
-        # Initialize HTTP server for interactive canvases
-        self.http_server = None
-        self.http_port = None
-        self._init_http_server()
-
-    def _init_http_server(self):
-        """Initialize ROOT's HTTP server for web-based canvases."""
-        try:
-            # Try to start HTTP server on port 8080
-            self.http_server = ROOT.THttpServer("http:8080")  # type: ignore
-            self.http_server.SetReadOnly(False)  # type: ignore
-            # Register the server globally so canvases can be accessed
-            ROOT.gROOT.GetListOfBrowsables().Add(self.http_server)  # type: ignore
-        except Exception as e:
-            # HTTP server might not be available in all ROOT builds
-            sys.stderr.write(f"Warning: Could not start HTTP server: {e}\n")
-            self.http_server = None
-
-    def _extract_http_port(self, stderr: str) -> Optional[int]:
-        """Extract the actual HTTP server port from ROOT's stderr message."""
-        match = re.search(r'Starting HTTP server on port [\d.]+:(\d+)', stderr)
-        if match:
-            return int(match.group(1))
-        return None
-
-    def get_http_url(self) -> Optional[str]:
-        """Get the HTTP server URL if available."""
-        if self.http_server and self.http_port:
-            return f"http://localhost:{self.http_port}"
-        return None
-
-    def _has_canvases(self) -> bool:
-        """Check if any TCanvas objects exist."""
-        try:
-            canvases = ROOT.gROOT.GetListOfCanvases()  # type: ignore
-            return canvases and canvases.GetSize() > 0
-        except Exception:
-            return False
+        # Keep recent execution globals to prevent Python GC from destroying ROOT objects
+        self.globals_dict = {"ROOT": ROOT, "__name__": "__root_mcp__"}
 
     def run_python(self, code: str) -> Dict[str, Any]:
         """Execute Python code with ROOT available in scope."""
         out_buf, err_buf = io.StringIO(), io.StringIO()
+
         try:
             with contextlib.redirect_stdout(out_buf), contextlib.redirect_stderr(err_buf):
-                globals_dict = {"ROOT": ROOT, "__name__": "__root_mcp__"}
-                exec(code, globals_dict)  # pylint: disable=exec-used
-            
+                exec(code, self.globals_dict)  # pylint: disable=exec-used
+
             stderr = err_buf.getvalue()
-            
-            # Extract HTTP port if not already set
-            if not self.http_port:
-                port = self._extract_http_port(stderr)
-                if port:
-                    self.http_port = port
-            
+
             # Check if any canvases were created and add HTTP URL info
             stdout = out_buf.getvalue()
-            if self._has_canvases() and self.http_server:
-                http_url = self.get_http_url()
-                if http_url and http_url not in stdout:
-                    stdout += f"\n🌐 ROOT Web Canvas: {http_url}\n"
-            
+
             result = ExecutionResult(
                 ok=True,
                 stdout=stdout,
                 stderr=stderr,
             )
+
         except Exception as e:  # pylint: disable=broad-except
             with contextlib.redirect_stdout(out_buf), contextlib.redirect_stderr(err_buf):
                 traceback.print_exc()
@@ -188,21 +143,12 @@ class RootExecutor:
             # Combine outputs
             combined_stdout = (py_out.getvalue() or "") + (os_out or "")
             combined_stderr = (py_err.getvalue() or "") + (os_err or "")
-            
-            # Extract HTTP port if not already set
-            if not self.http_port:
-                port = self._extract_http_port(combined_stderr)
-                if port:
-                    self.http_port = port
 
             # Check for errors: ret_code != 0 OR stderr contains error keywords
             error_keywords = ["error:", "Error:", "fatal error:"]
             has_stderr_error = any(keyword in combined_stderr for keyword in error_keywords)
-            
-            # Filter out JIT warnings from error detection
-            is_jit_warning = "Failed to materialize symbols" in combined_stderr
 
-            if (ret_code != 0 or has_stderr_error) and not is_jit_warning:
+            if ret_code != 0 or has_stderr_error:
                 error_msg = (
                     f"C++ execution failed (return code: {ret_code})"
                     if ret_code != 0
@@ -218,11 +164,7 @@ class RootExecutor:
             else:
                 # Check if any canvases were created and add HTTP URL info
                 stdout = combined_stdout
-                if self._has_canvases() and self.http_server:
-                    http_url = self.get_http_url()
-                    if http_url and http_url not in stdout:
-                        stdout += f"\n🌐 ROOT Web Canvas: {http_url}\n"
-                
+
                 result = ExecutionResult(
                     ok=True,
                     stdout=stdout,

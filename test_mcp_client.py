@@ -15,13 +15,10 @@ except ImportError:
 
 async def test_root_mcp():
     """Launch the MCP server and call run_python and run_cpp tools."""
-    # Path to thisroot.sh (adjust if needed)
-    thisroot = "/home/ozapatam/Projects/CERN/ROOT/root/build/bin/thisroot.sh"
-
     server_params = StdioServerParameters(
         command="bash",
-        args=["-c", f"source {thisroot} && exec /usr/bin/python3 -m root_mcp_server.cli"],
-        env=os.environ.copy()
+        args=["-c", f"exec /usr/bin/python3 -m root_mcp_server.cli"],
+        env=os.environ.copy(),
     )
 
     print("Launching root-mcp server...")
