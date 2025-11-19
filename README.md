@@ -14,7 +14,7 @@
 
 ---
 
-Minimal MCP (Model Context Protocol) server that allows Claude and other MCP clients to execute Python and C++ code directly using PyROOT, without HTTP endpoints or external APIs.
+Minimal MCP (Model Context Protocol) server that allows LLMs and other MCP clients to execute Python and C++ code directly using PyROOT, without HTTP endpoints or external APIs.
 
 ## Features
 
@@ -24,6 +24,22 @@ Minimal MCP (Model Context Protocol) server that allows Claude and other MCP cli
 - **Error detection**: Automatic detection of C++ compilation errors via return codes and stderr
 - **Console logging**: Pretty-printed code execution with results in MCP console
 - **Graphics support**: TCanvas and ROOT graphics objects with event loop support
+
+## Architecture
+
+Below is the architecture diagram for the `root_mcp_server` project. The image file `diagram.png` (in the repository root) contains a visual representation of the components and their interactions.
+
+![Architecture Diagram](./diagram.png)
+
+Description (English):
+
+- **MCP Client (VS Code / CLI / Programmatic)**: connects to the MCP server and sends execution requests. Clients can be interactive (e.g. VS Code + Copilot Chat) or scripted CLI clients.
+- **FastMCP Server**: receives MCP tool calls (`root_python`, `root_cpp`) and dispatches them to the in-process executor.
+- **RootExecutor (in-process PyROOT)**: runs Python or C++ code with the ROOT runtime, manages graphics mode, and can expose an embedded HTTP server (THttpServer) for interactive canvases.
+- **ROOT Web Canvas (THttpServer / JSROOT)**: when graphics are enabled, canvases created in the ROOT session are available via the embedded HTTP server; clients can open the provided URL to inspect plots interactively.
+- **Artifacts & Outputs**: execution results (stdout/stderr and error metadata) are returned to the MCP client; interactive canvases are accessible via the HTTP endpoint.
+
+This architecture keeps ROOT running in-process for low-latency execution while providing a web-backed path for interactive visualization.
 
 ## Installation
 
