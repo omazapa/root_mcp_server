@@ -36,13 +36,13 @@ async def test_root_mcp():
             # Call run_python
             print("\n=== Calling run_python ===")
             python_code = "import ROOT; print(ROOT.gROOT.GetVersion())"
-            result = await session.call_tool("run_python", arguments={"code": python_code})
+            result = await session.call_tool("root_python", arguments={"code": python_code})
             print(f"Result: {result}")
 
             # Call run_cpp
             print("\n=== Calling run_cpp ===")
             cpp_code = 'std::cout << "Hello from C++!" << std::endl;'
-            result2 = await session.call_tool("run_cpp", arguments={"code": cpp_code})
+            result2 = await session.call_tool("root_cpp", arguments={"code": cpp_code})
             print(f"Result: {result2}")
 
     print("\nTest completed successfully!")

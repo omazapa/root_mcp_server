@@ -1,22 +1,27 @@
 """Test ROOT MCP server with histogram graphics."""
 
 import asyncio
+import os
 from mcp.client.stdio import stdio_client, StdioServerParameters
+from mcp.client.session import ClientSession
 
 
 async def test_histogram():
     """Test histogram plotting with ROOT MCP server."""
-    server_params = StdioServerParameters(command="/usr/bin/python3", args=["-m", "root_mcp_server.cli"], env=None)
+    server_params = StdioServerParameters(
+        command="bash", args=["-c", "exec /usr/bin/python3 -m root_mcp_server.cli"], env=os.environ.copy()
+    )
 
     print("Launching root-mcp server with graphics enabled...")
 
     async with stdio_client(server_params) as (read, write):
-        async with read:
-            async with write:
-                print("Connected. Creating histogram...")
+        async with ClientSession(read, write) as session:
+            await session.initialize()
 
-                # Create and display histogram
-                histogram_code = """
+            print("Connected. Creating histogram...")
+
+            # Create and display histogram
+            histogram_code = """
 import ROOT
 import time
 
@@ -41,10 +46,10 @@ time.sleep(5)
 print("Done")
 """
 
-                result = await write.call_tool("root_python", arguments={"code": histogram_code})
-                print(f"\nResult: {result}")
+            result = await session.call_tool("root_python", arguments={"code": histogram_code})
+            print(f"\nResult: {result}")
 
-                print("\nHistogram test completed!")
+            print("\nHistogram test completed!")
 
 
 if __name__ == "__main__":
