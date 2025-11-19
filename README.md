@@ -31,7 +31,7 @@ Below is the architecture diagram for the `root_mcp_server` project. The image c
 
 ![Architecture Diagram](./diagram.png)
 
-Description (English):
+Description:
 
 - **MCP Client (VS Code / CLI / Programmatic)**: connects to the MCP server and sends execution requests. Clients can be interactive (e.g. VS Code + Copilot Chat) or scripted CLI clients.
 - **FastMCP Server**: receives MCP tool calls (`root_python`, `root_cpp`) and dispatches them to the in-process executor.
