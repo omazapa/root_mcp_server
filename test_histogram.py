@@ -12,7 +12,7 @@ async def test_histogram():
         command="bash", args=["-c", "exec /usr/bin/python3 -m root_mcp_server.cli"], env=os.environ.copy()
     )
 
-    print("Launching root-mcp server with graphics enabled...")
+    print("Launching root_mcp_server server with graphics enabled...")
 
     async with stdio_client(server_params) as (read, write):
         async with ClientSession(read, write) as session:

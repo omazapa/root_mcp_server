@@ -17,7 +17,7 @@ from root_mcp_server.executor import RootExecutor
 executor = RootExecutor(enable_graphics=True)
 
 # Create FastMCP server
-server = FastMCP(name="root-mcp")
+server = FastMCP(name="root_mcp_server")
 
 
 @server.tool(name="root_python", description="Execute Python code with PyROOT available in scope.")

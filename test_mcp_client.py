@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test client to call the root-mcp server via MCP stdio transport."""
+"""Test client to call the root_mcp_server server via MCP stdio transport."""
 import asyncio
 import sys
 import os

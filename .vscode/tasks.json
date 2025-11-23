@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Start root-mcp (stdio)",
+      "label": "Start root_mcp_server (stdio)",
       "type": "shell",
       "command": "bash",
       "args": [
@@ -24,7 +24,7 @@
       "isBackground": false
     },
     {
-      "label": "Start root-mcp (debug wrapper)",
+      "label": "Start root_mcp_server (debug wrapper)",
       "type": "shell",
   "command": "${workspaceFolder}/scripts/launch_root_mcp_debug.sh",
       "presentation": {

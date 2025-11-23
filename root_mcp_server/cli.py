@@ -1,4 +1,4 @@
-"""CLI entry point for the root-mcp server.
+"""CLI entry point for the root_mcp_server server.
 
 Note: Do not print to stdout before/while the MCP stdio transport is active.
 We write startup messages to stderr to avoid corrupting the protocol stream.
@@ -13,7 +13,7 @@ def main():
 
     This script is the console entrypoint (console_scripts) installed by the package.
     """
-    print("Starting root-mcp server (stdio)...", file=sys.stderr)
+    print("Starting root_mcp_server server (stdio)...", file=sys.stderr)
     server.run(transport="stdio")
 
 

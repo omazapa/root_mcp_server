@@ -2,7 +2,7 @@
 
 <img src="https://root.cern/img/logos/ROOT_Logo/misc/generic-logo-color-512.png" alt="ROOT Logo" width="200"/>
 
-# root-mcp: MCP Server for ROOT
+# root_mcp_server: MCP Server for ROOT
 
 **Model Context Protocol server for executing Python and C++ code with PyROOT**
 
@@ -106,7 +106,7 @@ The server will automatically log executed code and results to the MCP console (
 Start the MCP server directly:
 
 ```bash
-root-mcp
+root_mcp_server
 ```
 
 ### Option 3: Programmatic usage
