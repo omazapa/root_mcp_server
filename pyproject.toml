@@ -20,7 +20,7 @@ dev = [
 ]
 
 [project.scripts]
-root-mcp = "root_mcp_server.cli:main"
+root-mcp-server = "root_mcp_server.cli:main"
 
 [tool.setuptools.packages]
 find = {where = ["."]}
