@@ -78,7 +78,7 @@ Add the MCP server configuration to your VS Code settings. Open your `settings.j
   "mcp.servers": {
 		"root/mcp-server": {
 			"type": "stdio",
-			"command": "root-mcp",
+			"command": "root_mcp_server",
 			"args": []
 		}
   }
@@ -92,7 +92,7 @@ Add the MCP server configuration to your VS Code settings. Open your `settings.j
 Once configured, you can use the MCP tools in GitHub Copilot Chat:
 
 ```
-@workspace Use #root_python to create a histogram with Gaussian distribution
+@workspace Use #root_python to execute Python code with PyROOT
 ```
 
 ```

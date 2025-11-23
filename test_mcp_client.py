@@ -21,7 +21,7 @@ async def test_root_mcp():
         env=os.environ.copy(),
     )
 
-    print("Launching root-mcp server...")
+    print("Launching root_mcp_server server...")
     async with stdio_client(server_params) as (read, write):
         async with ClientSession(read, write) as session:
             print("Connected to server. Initializing...")
