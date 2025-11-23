@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "root-mcp-server"
-version = "0.1.1"
+version = "0.1.2"
 description = "MCP server for ROOT: execute Python and C++ directly via PyROOT"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -20,7 +20,7 @@ dev = [
 ]
 
 [project.scripts]
-root-mcp-server = "root_mcp_server.cli:main"
+root_mcp_server = "root_mcp_server.cli:main"
 
 [tool.setuptools.packages]
 find = {where = ["."]}
